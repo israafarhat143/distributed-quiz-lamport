@@ -1,0 +1,156 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools / Templates
+ * and open the template in the editor.
+ */
+package quizisraahelmi;
+
+import java.util.*;
+
+/**
+ * Gestionnaire de section critique basé sur l'algorithme de Lamport Permet à
+ * plusieurs clients de coordonner l'accès à une ressource partagée
+ */
+public class CriticalSectionManager {
+
+    private PriorityQueue<Message> requestQueue;
+    private Set<String> replyReceived;
+    private LamportClock clock;
+    private String ownerId;
+    private boolean inCriticalSection;
+    private int totalClients;
+    private Object lockObject = new Object();
+
+    public CriticalSectionManager(String ownerId, int totalClients, LamportClock clock) {
+        this.ownerId = ownerId;
+        this.totalClients = totalClients;
+        this.clock = clock;
+        this.requestQueue = new PriorityQueue<>();
+        this.replyReceived = new HashSet<>();
+        this.inCriticalSection = false;
+    }
+
+    /**
+     * Demande l'accès à la section critique
+     */
+    public synchronized void requestCriticalSection() throws InterruptedException {
+        synchronized (lockObject) {
+            int timestamp = clock.tick();
+            Message request = new Message(timestamp, ownerId, Message.MessageType.CRITICAL_SECTION,
+                    "Demande de section critique");
+
+            // Ajouter sa propre demande à la file
+            requestQueue.offer(request);
+            replyReceived.clear();
+
+            // Attendre les réponses de tous les autres clients
+            while (replyReceived.size() < totalClients - 1) {
+                lockObject.wait();
+            }
+
+            // Vérifier qu'on est en tête de file
+            while (!requestQueue.isEmpty() && !requestQueue.peek().getClientId().equals(ownerId)) {
+                lockObject.wait();
+            }
+
+            inCriticalSection = true;
+        }
+    }
+
+    /**
+     * Libère la section critique
+     */
+    public synchronized void releaseCriticalSection() {
+        synchronized (lockObject) {
+            if (inCriticalSection) {
+                inCriticalSection = false;
+
+                // Retirer sa demande de la file
+                requestQueue.remove(new Message(clock.getTime(), ownerId,
+                        Message.MessageType.CRITICAL_SECTION, ""));
+
+                // Notifier tous les threads en attente
+                lockObject.notifyAll();
+            }
+        }
+    }
+
+    /**
+     * Enregistrer la réception d'une réponse d'un autre client
+     */
+    public synchronized void receiveReply(String clientId) {
+        synchronized (lockObject) {
+            replyReceived.add(clientId);
+            lockObject.notifyAll();
+        }
+    }
+
+    /**
+     * Ajouter une demande d'un autre client à la file
+     */
+    public synchronized void addRequestToQueue(Message request) {
+        synchronized (lockObject) {
+            requestQueue.offer(request);
+            clock.update(request.getLamportTimestamp());
+            lockObject.notifyAll();
+        }
+    }
+
+    /**
+     * Vérifier si on peut utiliser la section critique
+     */
+    public synchronized boolean canEnterCriticalSection() {
+        synchronized (lockObject) {
+            if (requestQueue.isEmpty()) {
+                return true;
+            }
+
+            Message frontRequest = requestQueue.peek();
+            return frontRequest.getClientId().equals(ownerId) && replyReceived.size() >= totalClients - 1;
+        }
+    }
+
+    /**
+     * Obtenir la position dans la file
+     */
+    public synchronized int getQueuePosition() {
+        synchronized (lockObject) {
+            int position = 0;
+            for (Message msg : requestQueue) {
+                if (msg.getClientId().equals(ownerId)) {
+                    return position;
+                }
+                position++;
+            }
+            return -1;  // Non trouvé
+        }
+    }
+
+    /**
+     * Obtenir la taille de la file d'attente
+     */
+    public synchronized int getQueueSize() {
+        synchronized (lockObject) {
+            return requestQueue.size();
+        }
+    }
+
+    /**
+     * Vérifier si on est dans la section critique
+     */
+    public boolean isInCriticalSection() {
+        return inCriticalSection;
+    }
+
+    /**
+     * Réinitialiser le gestionnaire
+     */
+    public synchronized void reset() {
+        synchronized (lockObject) {
+            requestQueue.clear();
+            replyReceived.clear();
+            inCriticalSection = false;
+            lockObject.notifyAll();
+        }
+    }
+}

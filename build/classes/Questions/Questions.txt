@@ -1,0 +1,18 @@
+Quelle est la capitale de la France ?
+Paris,Lyon,Marseille,Toulouse
+Paris
+Combien font 3 × 4 ?
+9,10,11,12
+12
+
+Quel langage est utilisé pour Android natif ?
+Java,Python,C#,Ruby
+Java
+
+Quelle couleur obtient-on en mélangeant bleu et jaune ?
+Vert,Rouge,Orange,Violet
+Vert
+
+Quel est le plus grand océan du monde ?
+Atlantique,Indien,Pacifique,Arctique
+Pacifique

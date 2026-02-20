@@ -1,0 +1,58 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package quizisraahelmi;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * Horloge Lamport pour la synchronisation distribuée Garantit un ordonnancement
+ * causal des événements dans un système distribué
+ */
+public class LamportClock {
+
+    private AtomicInteger time = new AtomicInteger(0);
+
+    /**
+     * Incrémenter l'horloge pour un événement local
+     */
+    public int tick() {
+        return time.incrementAndGet();
+    }
+
+    /**
+     * Mettre à jour l'horloge avec un timestamp reçu d'un autre processus
+     * Assure que l'horloge reste causalement cohérente
+     */
+    public synchronized int update(int received) {
+        int current = time.get();
+        int newTime = Math.max(current, received) + 1;
+        time.set(newTime);
+        return newTime;
+    }
+
+    /**
+     * Obtenir le timestamp actuel
+     */
+    public int getTime() {
+        return time.get();
+    }
+
+    /**
+     * Réinitialiser l'horloge
+     */
+    public void reset() {
+        time.set(0);
+    }
+
+    /**
+     * Comparer deux timestamps Retourne < 0 si this < other
+     * Retourne 0 si this == other
+     * Retourne > 0 si this > other
+     */
+    public static int compare(int timestamp1, int timestamp2) {
+        return Integer.compare(timestamp1, timestamp2);
+    }
+}
