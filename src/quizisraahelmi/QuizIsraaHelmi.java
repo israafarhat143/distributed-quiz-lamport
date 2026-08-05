@@ -9,7 +9,7 @@ package quizisraahelmi;
  *
  * @author ASUS
  */
-public class QuizIsraaHelmi {
+public class Quiz {
 
     /**
      * @param args the command line arguments
