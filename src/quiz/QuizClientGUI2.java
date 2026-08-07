@@ -1,4 +1,4 @@
-package quizisraahelmi;
+package quiz;
 
 import java.awt.*;
 import java.awt.event.*;
